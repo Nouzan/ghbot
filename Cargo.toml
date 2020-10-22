@@ -1,0 +1,16 @@
+[package]
+name = "ghbot"
+version = "0.1.0"
+authors = ["Nouzan <clobraindie@outlook.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+pretty_env_logger = "0.4"
+tokio = { version =  "0.2", features = ["rt-threaded", "macros"] }
+teloxide = "0.3"
+warp = "0.2"
+reqwest = "0.10"
+serde_json = "1.0"
