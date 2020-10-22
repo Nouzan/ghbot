@@ -29,7 +29,7 @@ async fn handle_gh(
             "Issue[#{}]({}) {}",
             payload.issue.number, payload.issue.url, payload.action
         ),
-        Payload::Common(payload) => format!("Event: {} {}", event, payload.action),
+        Payload::Common(payload) => format!("Event: `{}` {}", event, payload.action),
     };
     log::debug!("ready to send: {}", message);
     if let Err(error) = bot

@@ -21,7 +21,7 @@ pub enum Payload {
 pub struct IssueEvent {
     pub action: String,
     pub issue: Issue,
-    pub changes: Changes,
+    pub changes: Option<Changes>,
     pub repository: Repository,
     pub sender: Sender,
 }
