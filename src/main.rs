@@ -31,6 +31,7 @@ async fn handle_gh(
         ),
         Payload::Common(payload) => format!("Event: {} {}", event, payload.action),
     };
+    log::debug!("ready to send: {}", message);
     if let Err(error) = bot
         .send_message(chat, message)
         .parse_mode(ParseMode::MarkdownV2)
