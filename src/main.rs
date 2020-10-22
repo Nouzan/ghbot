@@ -25,15 +25,19 @@ async fn handle_gh(
     let (bot, chat, event, payload) = state;
     let message = match payload {
         Payload::IssueEvent(payload) => format!(
-            "[{}#{}]({}) {}",
-            payload.repository.full_name, payload.issue.number, payload.issue.html_url, payload.action
+            "<a href={}>{}#{}</a> {}: {}",
+            payload.issue.html_url,
+            payload.repository.full_name,
+            payload.issue.number,
+            payload.action,
+            payload.comment.body,
         ),
         Payload::Common(payload) => format!("Event: `{}` {}", event, payload.action),
     };
     log::debug!("ready to send: {}", message);
     if let Err(error) = bot
         .send_message(chat, message)
-        // .parse_mode(ParseMode::MarkdownV2)
+        .parse_mode(ParseMode::HTML)
         .send()
         .await
     {
