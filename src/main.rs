@@ -19,9 +19,16 @@ async fn handle_rejection(error: warp::Rejection) -> Result<impl warp::Reply, In
     Ok(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
-async fn handle_gh(state: (Bot, i64, serde_json::Value)) -> Result<impl warp::Reply, warp::Rejection> {
+async fn handle_gh(
+    state: (Bot, i64, serde_json::Value),
+) -> Result<impl warp::Reply, warp::Rejection> {
     let (bot, chat, json) = state;
-    if let Err(error) = bot.send_message(chat, serde_json::to_string_pretty(&json).unwrap()).send().await {
+    log::debug!("gh: {}", serde_json::to_string_pretty(&json).unwrap());
+    if let Err(error) = bot
+        .send_message(chat, "Event!")
+        .send()
+        .await
+    {
         log::error!("send message error: {}", error);
         Err(warp::reject::reject())
     } else {
@@ -40,9 +47,15 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
     let host = env::var("HOST").expect("have HOST env variable");
     let path = format!("bot{}", teloxide_token);
     let url = format!("https://{}/{}", host, path);
-    let chat: i64 = env::var("CHAT").expect("CHAT env variable missing").parse().expect("CHAT value to be integer");
+    let chat: i64 = env::var("CHAT")
+        .expect("CHAT env variable missing")
+        .parse()
+        .expect("CHAT value to be integer");
 
-    bot.set_webhook(url).send().await.expect("Cannot setup a webhook");
+    bot.set_webhook(url)
+        .send()
+        .await
+        .expect("Cannot setup a webhook");
 
     let (tx, rx) = mpsc::unbounded_channel();
 
@@ -64,15 +77,18 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
                 }
             };
             if let Ok(update) = try_parse {
-                tx.send(Ok(update)).expect("Cannot send an incoming update from the webhook")
+                tx.send(Ok(update))
+                    .expect("Cannot send an incoming update from the webhook")
             }
 
             StatusCode::OK
         });
 
-    let gh = warp::path!("gh").and(warp::post()).and(warp::body::json()).map(move |json: serde_json::Value| {
-        (bot.clone(), chat, json)
-    }).and_then(handle_gh);
+    let gh = warp::path!("gh")
+        .and(warp::post())
+        .and(warp::body::json())
+        .map(move |json: serde_json::Value| (bot.clone(), chat, json))
+        .and_then(handle_gh);
 
     let server = tg.or(gh).recover(handle_rejection);
 
@@ -92,7 +108,9 @@ async fn run() {
     teloxide::repl_with_listener(
         bot,
         |message| async move {
-            message.answer_str(format!("chat: {}", message.chat_id())).await?;
+            message
+                .answer_str(format!("chat: {}", message.chat_id()))
+                .await?;
             ResponseResult::<()>::Ok(())
         },
         webhook(cloned_bot).await,
