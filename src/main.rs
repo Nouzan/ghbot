@@ -19,11 +19,11 @@ async fn handle_rejection(error: warp::Rejection) -> Result<impl warp::Reply, In
     Ok(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
-async fn handle_gh(state: (Bot, i64, github::Common)) -> Result<impl warp::Reply, warp::Rejection> {
-    let (bot, chat, event) = state;
-    log::debug!("gh: {}", serde_json::to_string(&event).unwrap());
+async fn handle_gh(state: (Bot, i64, String, github::Common)) -> Result<impl warp::Reply, warp::Rejection> {
+    let (bot, chat, event, payload) = state;
+    log::debug!("gh: {}", serde_json::to_string(&payload).unwrap());
     if let Err(error) = bot
-        .send_message(chat, format!("Event: {}", event.action))
+        .send_message(chat, format!("Event: {} {}", event, payload.action))
         .send()
         .await
     {
@@ -84,8 +84,9 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
 
     let gh = warp::path!("gh")
         .and(warp::post())
+        .and(warp::header("X-GitHub-Event"))
         .and(warp::body::json())
-        .map(move |json: github::Common| (bot.clone(), chat, json))
+        .map(move |event: String, payload: github::Common| (bot.clone(), chat, event, payload))
         .and_then(handle_gh);
 
     let server = tg.or(gh).recover(handle_rejection);
