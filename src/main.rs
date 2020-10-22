@@ -25,7 +25,7 @@ async fn handle_gh(
     let (bot, chat, event, payload) = state;
     let message = match payload {
         Payload::IssueEvent(payload) => format!(
-            "Issue[#{}]({}) {}",
+            "Issue[\\#{}]({}) {}",
             payload.issue.number, payload.issue.url, payload.action
         ),
         Payload::Common(payload) => format!("Event: `{}` {}", event, payload.action),
