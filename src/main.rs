@@ -3,11 +3,11 @@
 
 use teloxide::{dispatching::update_listeners, prelude::*};
 
+use ghbot::github;
+use reqwest::StatusCode;
 use std::{convert::Infallible, env, net::SocketAddr};
 use tokio::sync::mpsc;
 use warp::Filter;
-
-use reqwest::StatusCode;
 
 #[tokio::main]
 async fn main() {
@@ -19,13 +19,11 @@ async fn handle_rejection(error: warp::Rejection) -> Result<impl warp::Reply, In
     Ok(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
-async fn handle_gh(
-    state: (Bot, i64, serde_json::Value),
-) -> Result<impl warp::Reply, warp::Rejection> {
-    let (bot, chat, json) = state;
-    log::debug!("gh: {}", serde_json::to_string_pretty(&json).unwrap());
+async fn handle_gh(state: (Bot, i64, github::Common)) -> Result<impl warp::Reply, warp::Rejection> {
+    let (bot, chat, event) = state;
+    log::debug!("gh: {}", serde_json::to_string(&event).unwrap());
     if let Err(error) = bot
-        .send_message(chat, "Event!")
+        .send_message(chat, format!("Event: {}", event.action))
         .send()
         .await
     {
@@ -87,7 +85,7 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
     let gh = warp::path!("gh")
         .and(warp::post())
         .and(warp::body::json())
-        .map(move |json: serde_json::Value| (bot.clone(), chat, json))
+        .map(move |json: github::Common| (bot.clone(), chat, json))
         .and_then(handle_gh);
 
     let server = tg.or(gh).recover(handle_rejection);
