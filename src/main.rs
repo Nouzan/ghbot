@@ -23,7 +23,6 @@ async fn handle_gh(
     state: (Bot, i64, String, Payload),
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let (bot, chat, event, payload) = state;
-    log::debug!("gh: {}", serde_json::to_string(&payload).unwrap());
     let message = match payload {
         Payload::IssueEvent(payload) => format!(
             "Issue[#{}]({}) {}",
@@ -97,7 +96,10 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
         .and(warp::post())
         .and(warp::header("X-GitHub-Event"))
         .and(warp::body::json())
-        .map(move |event: String, payload: Payload| (bot.clone(), chat, event, payload))
+        .map(move |event: String, payload: serde_json::Value| {
+            log::debug!("gh: {}", serde_json::to_string(&payload).unwrap());
+            (bot.clone(), chat, event, serde_json::from_value(payload).unwrap())
+        } )
         .and_then(handle_gh);
 
     let server = tg.or(gh).recover(handle_rejection);
