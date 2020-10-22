@@ -30,12 +30,13 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
     let host = env::var("HOST").expect("have HOST env variable");
     let path = format!("bot{}", teloxide_token);
     let url = format!("https://{}/{}", host, path);
+    let chat: i64 = env::var("CHAT").expect("CHAT env variable missing").parse().expect("CHAT value to be integer");
 
     bot.set_webhook(url).send().await.expect("Cannot setup a webhook");
 
     let (tx, rx) = mpsc::unbounded_channel();
 
-    let server = warp::post()
+    let tg = warp::post()
         .and(warp::path(path))
         .and(warp::body::json())
         .map(move |json: serde_json::Value| {
@@ -57,8 +58,14 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
             }
 
             StatusCode::OK
-        })
-        .recover(handle_rejection);
+        });
+
+    let gh = warp::path!("gh").and(warp::post()).and(warp::body::json()).map(move |json: serde_json::Value| {
+        bot.send_message(chat, serde_json::to_string_pretty(&json).unwrap());
+        Ok("")
+    });
+
+    let server = tg.or(gh).recover(handle_rejection);
 
     let serve = warp::serve(server);
 
@@ -77,7 +84,7 @@ async fn run() {
     teloxide::repl_with_listener(
         bot,
         |message| async move {
-            message.answer_str("pong").await?;
+            message.answer_str(format!("chat: {}", message.chat_id())).await?;
             ResponseResult::<()>::Ok(())
         },
         webhook(cloned_bot).await,
