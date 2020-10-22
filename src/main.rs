@@ -1,9 +1,9 @@
 // The version of Heroku ping-pong-bot, which uses a webhook to receive updates
 // from Telegram, instead of long polling.
 
-use teloxide::{dispatching::update_listeners, prelude::*};
+use teloxide::{dispatching::update_listeners, prelude::*, types::ParseMode};
 
-use ghbot::github;
+use ghbot::github::Payload;
 use reqwest::StatusCode;
 use std::{convert::Infallible, env, net::SocketAddr};
 use tokio::sync::mpsc;
@@ -19,11 +19,21 @@ async fn handle_rejection(error: warp::Rejection) -> Result<impl warp::Reply, In
     Ok(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
-async fn handle_gh(state: (Bot, i64, String, github::Common)) -> Result<impl warp::Reply, warp::Rejection> {
+async fn handle_gh(
+    state: (Bot, i64, String, Payload),
+) -> Result<impl warp::Reply, warp::Rejection> {
     let (bot, chat, event, payload) = state;
     log::debug!("gh: {}", serde_json::to_string(&payload).unwrap());
+    let message = match payload {
+        Payload::IssueEvent(payload) => format!(
+            "Issue[#{}]({}) {}",
+            payload.issue.number, payload.issue.url, payload.action
+        ),
+        Payload::Common(payload) => format!("Event: {} {}", event, payload.action),
+    };
     if let Err(error) = bot
-        .send_message(chat, format!("Event: {} {}", event, payload.action))
+        .send_message(chat, message)
+        .parse_mode(ParseMode::MarkdownV2)
         .send()
         .await
     {
@@ -86,7 +96,7 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
         .and(warp::post())
         .and(warp::header("X-GitHub-Event"))
         .and(warp::body::json())
-        .map(move |event: String, payload: github::Common| (bot.clone(), chat, event, payload))
+        .map(move |event: String, payload: Payload| (bot.clone(), chat, event, payload))
         .and_then(handle_gh);
 
     let server = tg.or(gh).recover(handle_rejection);
