@@ -19,6 +19,15 @@ async fn handle_rejection(error: warp::Rejection) -> Result<impl warp::Reply, In
     Ok(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
+async fn handle_gh(state: (Bot, i64, serde_json::Value)) -> Result<impl warp::Reply, warp::Rejection> {
+    let (bot, chat, json) = state;
+    if bot.send_message(chat, serde_json::to_string_pretty(&json).unwrap()).send().await.is_err() {
+        Err(warp::reject::reject())
+    } else {
+        Ok(warp::reply())
+    }
+}
+
 pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infallible> {
     // Heroku defines auto defines a port value
     let teloxide_token = env::var("TELOXIDE_TOKEN").expect("TELOXIDE_TOKEN env variable missing");
@@ -61,9 +70,8 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
         });
 
     let gh = warp::path!("gh").and(warp::post()).and(warp::body::json()).map(move |json: serde_json::Value| {
-        bot.send_message(chat, serde_json::to_string_pretty(&json).unwrap());
-        Ok("")
-    });
+        (bot.clone(), chat, json)
+    }).and_then(handle_gh);
 
     let server = tg.or(gh).recover(handle_rejection);
 
@@ -77,7 +85,6 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
 async fn run() {
     teloxide::enable_logging!();
     log::info!("Starting heroku_ping_pong_bot...");
-
     let bot = Bot::from_env();
 
     let cloned_bot = bot.clone();
