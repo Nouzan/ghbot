@@ -98,8 +98,13 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
         .and(warp::body::json())
         .map(move |event: String, payload: serde_json::Value| {
             log::debug!("gh: {}", serde_json::to_string(&payload).unwrap());
-            (bot.clone(), chat, event, serde_json::from_value(payload).unwrap())
-        } )
+            (
+                bot.clone(),
+                chat,
+                event,
+                serde_json::from_value(payload).unwrap(),
+            )
+        })
         .and_then(handle_gh);
 
     let server = tg.or(gh).recover(handle_rejection);
