@@ -21,7 +21,8 @@ async fn handle_rejection(error: warp::Rejection) -> Result<impl warp::Reply, In
 
 async fn handle_gh(state: (Bot, i64, serde_json::Value)) -> Result<impl warp::Reply, warp::Rejection> {
     let (bot, chat, json) = state;
-    if bot.send_message(chat, serde_json::to_string_pretty(&json).unwrap()).send().await.is_err() {
+    if let Err(error) = bot.send_message(chat, serde_json::to_string_pretty(&json).unwrap()).send().await {
+        log::error!("send message error: {}", error);
         Err(warp::reject::reject())
     } else {
         Ok(warp::reply())
