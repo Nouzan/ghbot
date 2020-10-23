@@ -122,10 +122,9 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
 
 fn get_version() -> String {
     format!(
-        "gh-bot {} ({} {})",
+        "gh-bot {} ({})",
         env!("CARGO_PKG_VERSION"),
-        env!("VERGEN_SHA_SHORT"),
-        env!("VERGEN_COMMIT_DATE")
+        env!("VERGEN_BUILD_DATE"),
     )
 }
 
