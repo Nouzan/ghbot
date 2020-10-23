@@ -131,7 +131,6 @@ fn get_version() -> String {
 
 async fn run() {
     teloxide::enable_logging!();
-    log::info!("{}", get_version());
     let bot = Bot::from_env();
 
     let cloned_bot = bot.clone();
