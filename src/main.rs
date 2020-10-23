@@ -120,9 +120,18 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
     rx
 }
 
+fn get_version() -> String {
+    format!(
+        "gh-bot {} ({} {})",
+        env!("CARGO_PKG_VERSION"),
+        env!("VERGEN_SHA_SHORT"),
+        env!("VERGEN_COMMIT_DATE")
+    )
+}
+
 async fn run() {
     teloxide::enable_logging!();
-    log::info!("Starting heroku_ping_pong_bot...");
+    log::info!("{}", get_version());
     let bot = Bot::from_env();
 
     let cloned_bot = bot.clone();
@@ -130,7 +139,7 @@ async fn run() {
         bot,
         |message| async move {
             message
-                .answer_str(format!("chat: {}", message.chat_id()))
+                .answer_str(format!("ChatId: {}\n{}", message.chat_id(), get_version()))
                 .await?;
             ResponseResult::<()>::Ok(())
         },
