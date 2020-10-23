@@ -5,5 +5,5 @@ heroku config:set $(cat .env | sed '/^$/d; /#[[:print:]]*$/d')
 ```
 ### 提交到**Heroku**
 ```bash
-git push heroku master
+git push heroku main
 ```

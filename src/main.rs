@@ -138,7 +138,6 @@ fn get_version() -> String {
 }
 
 async fn run() {
-    println!("{}", get_version());
     teloxide::enable_logging!();
     let bot = Bot::from_env();
 
