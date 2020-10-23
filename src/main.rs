@@ -120,15 +120,25 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
     rx
 }
 
+fn get_sha() -> String {
+    match env!("VERGEN_SHA") {
+        "UNKNOWN" => (),
+        sha => return sha.to_string(),
+    };
+    env!("HEROKU_SHA").to_string()
+}
+
 fn get_version() -> String {
     format!(
-        "gh-bot {} ({})",
+        "gh-bot {} ({} {})",
         env!("CARGO_PKG_VERSION"),
+        get_sha().chars().take(7).collect::<String>(),
         env!("VERGEN_BUILD_DATE"),
     )
 }
 
 async fn run() {
+    println!("{}", get_version());
     teloxide::enable_logging!();
     let bot = Bot::from_env();
 
