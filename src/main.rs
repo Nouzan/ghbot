@@ -1,7 +1,9 @@
 // The version of Heroku ping-pong-bot, which uses a webhook to receive updates
 // from Telegram, instead of long polling.
 
-use teloxide::{dispatching::update_listeners, prelude::*, types::ParseMode};
+use teloxide::{
+    dispatching::update_listeners, prelude::*, types::ParseMode, utils::command::BotCommand,
+};
 
 use ghbot::github::Payload;
 use reqwest::StatusCode;
@@ -137,23 +139,52 @@ fn get_version() -> String {
     )
 }
 
+#[derive(BotCommand)]
+#[command(rename = "lowercase", description = "These commands are supported:")]
+enum Command {
+    #[command(description = "display this text.")]
+    Help,
+    #[command(description = "get chat id.")]
+    ChatId,
+    #[command(description = "get version.")]
+    Version,
+}
+
 async fn run() {
     teloxide::enable_logging!();
     let bot = Bot::from_env();
     let cloned_bot = bot.clone();
-    teloxide::repl_with_listener(
+    teloxide::commands_repl_with_listener(
         bot,
-        |message| async move {
-            let chat_id = message.chat_id();
-            let chat = message.bot.get_chat(chat_id).send().await?;
-            if chat.is_private() {
-                message
-                    .answer_str(format!("ChatId: {}\n{}", message.chat_id(), get_version()))
-                    .await?;
-            }
+        "Gh Bot",
+        |cx, command: Command| async move {
+            match command {
+                Command::Help => cx.answer(Command::descriptions()).send().await?,
+                Command::ChatId => {
+                    cx.answer(format!("ChatId: {}", cx.chat_id()))
+                        .send()
+                        .await?
+                }
+                Command::Version => cx.answer(get_version()).send().await?,
+            };
             ResponseResult::<()>::Ok(())
         },
         webhook(cloned_bot).await,
     )
     .await;
+    // teloxide::repl_with_listener(
+    //     bot,
+    //     |message| async move {
+    //         let chat_id = message.chat_id();
+    //         let chat = message.bot.get_chat(chat_id).send().await?;
+    //         if chat.is_private() {
+    //             message
+    //                 .answer_str(format!("ChatId: {}\n{}", message.chat_id(), get_version()))
+    //                 .await?;
+    //         }
+    //         ResponseResult::<()>::Ok(())
+    //     },
+    //     webhook(cloned_bot).await,
+    // )
+    // .await;
 }
