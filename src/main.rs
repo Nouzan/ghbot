@@ -32,14 +32,6 @@ async fn handle_gh(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let (bot, chat, event, payload) = state;
     let message = match payload {
-        Ok(Payload::IssueEvent(payload)) => format!(
-            "<a href=\"{}\">{}#{}</a>\n{}: {}",
-            payload.issue.html_url,
-            payload.repository.full_name,
-            payload.issue.number,
-            payload.action,
-            payload.comment.body,
-        ),
         Ok(Payload::Common(payload)) => format!(
             "<b>{}</b> {}:{}",
             payload

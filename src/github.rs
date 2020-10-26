@@ -13,7 +13,6 @@ pub struct Common {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Payload {
-    IssueEvent(IssueEvent),
     Common(Common),
 }
 
