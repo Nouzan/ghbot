@@ -5,6 +5,7 @@ use teloxide::{
     dispatching::update_listeners, prelude::*, types::ParseMode, utils::command::BotCommand,
 };
 
+use anyhow::{anyhow, Result};
 use ghbot::github::Payload;
 use lazy_static::lazy_static;
 use reqwest::StatusCode;
@@ -27,11 +28,11 @@ async fn handle_rejection(error: warp::Rejection) -> Result<impl warp::Reply, In
 }
 
 async fn handle_gh(
-    state: (Bot, i64, String, Payload),
+    state: (Bot, i64, String, Result<Payload>),
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let (bot, chat, event, payload) = state;
     let message = match payload {
-        Payload::IssueEvent(payload) => format!(
+        Ok(Payload::IssueEvent(payload)) => format!(
             "<a href=\"{}\">{}#{}</a>\n{}: {}",
             payload.issue.html_url,
             payload.repository.full_name,
@@ -39,14 +40,15 @@ async fn handle_gh(
             payload.action,
             payload.comment.body,
         ),
-        Payload::Common(payload) => format!(
+        Ok(Payload::Common(payload)) => format!(
             "<b>{}</b> {}:{}",
             payload
                 .repository
                 .map_or("".to_string(), |repo| { repo.name }),
             event,
-            payload.action
+            payload.action,
         ),
+        _ => String::from("An event happend but I can not parse it."),
     };
     log::debug!("ready to send: {}", message);
     if let Err(error) = bot
@@ -120,7 +122,7 @@ pub async fn webhook<'a>(bot: Bot) -> impl update_listeners::UpdateListener<Infa
                 bot.clone(),
                 chat,
                 event,
-                serde_json::from_value(payload).unwrap(),
+                serde_json::from_value(payload).map_err(|e| anyhow!("{}", e)),
             )
         })
         .and_then(handle_gh);

@@ -150,7 +150,7 @@ pub struct Repository {
     pub labels_url: String,
     pub language: String,
     pub languages_url: String,
-    pub license: License,
+    pub license: Option<serde_json::Value>,
     pub merges_url: String,
     pub milestones_url: String,
     pub mirror_url: Option<serde_json::Value>,
@@ -179,13 +179,4 @@ pub struct Repository {
     pub url: String,
     pub watchers: i64,
     pub watchers_count: i64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct License {
-    pub key: String,
-    pub name: String,
-    pub node_id: String,
-    pub spdx_id: String,
-    pub url: String,
 }
