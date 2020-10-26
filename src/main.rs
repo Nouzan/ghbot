@@ -156,7 +156,7 @@ async fn run() {
     let cloned_bot = bot.clone();
     teloxide::commands_repl_with_listener(
         bot,
-        "Gh Bot",
+        "ghbot",
         |cx, command: Command| async move {
             match command {
                 Command::Help => cx.answer(Command::descriptions()).send().await?,
@@ -172,19 +172,4 @@ async fn run() {
         webhook(cloned_bot).await,
     )
     .await;
-    // teloxide::repl_with_listener(
-    //     bot,
-    //     |message| async move {
-    //         let chat_id = message.chat_id();
-    //         let chat = message.bot.get_chat(chat_id).send().await?;
-    //         if chat.is_private() {
-    //             message
-    //                 .answer_str(format!("ChatId: {}\n{}", message.chat_id(), get_version()))
-    //                 .await?;
-    //         }
-    //         ResponseResult::<()>::Ok(())
-    //     },
-    //     webhook(cloned_bot).await,
-    // )
-    // .await;
 }
