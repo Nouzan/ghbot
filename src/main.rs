@@ -44,7 +44,7 @@ async fn handle_gh(
             "<b>{}</b> {}:{}",
             payload
                 .repository
-                .map_or("".to_string(), |repo| { repo.name }),
+                .map_or("".to_string(), |repo| { repo.full_name }),
             event,
             payload.action,
         ),
