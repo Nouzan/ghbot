@@ -39,7 +39,14 @@ async fn handle_gh(
             payload.action,
             payload.comment.body,
         ),
-        Payload::Common(payload) => format!("Event: {} {}", event, payload.action),
+        Payload::Common(payload) => format!(
+            "<b>{}</b> {}:{}",
+            payload
+                .repository
+                .map_or("".to_string(), |repo| { repo.name }),
+            event,
+            payload.action
+        ),
     };
     log::debug!("ready to send: {}", message);
     if let Err(error) = bot

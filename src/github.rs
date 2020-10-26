@@ -5,7 +5,7 @@ use serde_json::Value;
 pub struct Common {
     pub action: String,
     pub sender: Value,
-    pub repository: Option<Value>,
+    pub repository: Option<Repository>,
     pub organization: Option<Value>,
     pub installation: Option<Value>,
 }
