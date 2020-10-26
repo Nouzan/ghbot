@@ -6,10 +6,15 @@ use teloxide::{
 };
 
 use ghbot::github::Payload;
+use lazy_static::lazy_static;
 use reqwest::StatusCode;
 use std::{convert::Infallible, env, net::SocketAddr};
 use tokio::sync::mpsc;
 use warp::Filter;
+
+lazy_static! {
+    static ref BOT_NAME: String = env::var("BOT_NAME").expect("BOT_NAME env missing");
+}
 
 #[tokio::main]
 async fn main() {
@@ -156,7 +161,7 @@ async fn run() {
     let cloned_bot = bot.clone();
     teloxide::commands_repl_with_listener(
         bot,
-        "ghbot",
+        &BOT_NAME,
         |cx, command: Command| async move {
             match command {
                 Command::Help => cx.answer(Command::descriptions()).send().await?,
