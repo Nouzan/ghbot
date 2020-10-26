@@ -140,14 +140,17 @@ fn get_version() -> String {
 async fn run() {
     teloxide::enable_logging!();
     let bot = Bot::from_env();
-
     let cloned_bot = bot.clone();
     teloxide::repl_with_listener(
         bot,
         |message| async move {
-            message
-                .answer_str(format!("ChatId: {}\n{}", message.chat_id(), get_version()))
-                .await?;
+            let chat_id = message.chat_id();
+            let chat = message.bot.get_chat(chat_id).send().await?;
+            if chat.is_private() {
+                message
+                    .answer_str(format!("ChatId: {}\n{}", message.chat_id(), get_version()))
+                    .await?;
+            }
             ResponseResult::<()>::Ok(())
         },
         webhook(cloned_bot).await,
